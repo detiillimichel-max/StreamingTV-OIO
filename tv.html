@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamingTV OIO</title>
+  
+  <!-- Ícones da Biblioteca Lucide -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Estilos Premium: Glassmorphism + Identidade OIO Ciano -->
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at top left, #0c1d26, #050d11); /* Petróleo ultra profundo */
+      --oio-cyan: #00a294;
+      --oio-dark-cyan: #0c5861;
+      --glass-bg: rgba(255, 255, 255, 0.04);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-blur: blur(20px);
+      --text-main: #ffffff;
+      --text-muted: #8fa3a6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+
+    /* Container Principal da TV */
+    .tv-main-container {
+      width: 100%;
+      max-width: 860px;
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Tela de Exibição (Proporção de Cinema 16:9) */
+    .tv-screen-frame {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #000000;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+    }
+
+    #yt-hidden-player {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Painel Inferior de Controles Customizados */
+    .tv-dashboard-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 20px;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 16px;
+      border: 1px solid var(--glass-border);
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* Botões Customizados no Estilo OIO */
+    .action-button {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--glass-border);
+      color: var(--text-main);
+      padding: 10px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .action-button:hover {
+      background: var(--oio-cyan);
+      border-color: var(--oio-cyan);
+      box-shadow: 0 0 15px rgba(0, 162, 148, 0.4);
+      transform: translateY(-1px);
+    }
+
+    /* Controle Deslizante de Volume */
+    .volume-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-muted);
+    }
+
+    .volume-slider {
+      -webkit-appearance: none;
+      width: 110px;
+      background: rgba(255, 255, 255, 0.15);
+      height: 5px;
+      border-radius: 4px;
+      outline: none;
+      transition: background 0.2s;
+    }
+
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--oio-cyan);
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(0, 162, 148, 0.6);
+    }
+
+    /* Módulo de Canais */
+    .channels-grid-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+    }
+
+    .channel-selector {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
+      padding: 14px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      transition: all 0.25s ease;
+    }
+
+    .channel-selector i {
+      color: var(--text-muted);
+      transition: color 0.25s ease;
+    }
+
+    .channel-selector:hover {
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text-main);
+    }
+
+    /* Estado Ativo com o Degradê de Identidade OIO */
+    .channel-selector.is-active {
+      background: linear-gradient(135deg, var(--oio-cyan), var(--oio-dark-cyan));
+      border-color: var(--oio-cyan);
+      color: var(--text-main);
+      box-shadow: 0 8px 20px rgba(0, 162, 148, 0.3);
+    }
+
+    .channel-selector.is-active i {
+      color: var(--text-main);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="tv-main-container">
+    <!-- Tela do Player Nativo -->
+    <div class="tv-screen-frame">
+      <div id="yt-hidden-player"></div>
+    </div>
+
+    <!-- Barra de Ações Customizada -->
+    <div class="tv-dashboard-controls">
+      <div class="control-group">
+        <button class="action-button" id="control-play-pause">
+          <i data-lucide="pause"></i> <span id="txt-play">Pause</span>
+        </button>
+        <button class="action-button" id="control-next-video">
+          <i data-lucide="skip-forward"></i> Próximo
+        </button>
+      </div>
+
+      <div class="volume-box">
+        <i data-lucide="volume-2" id="volume-icon"></i>
+        <input type="range" class="volume-slider" id="control-volume" min="0" max="100" value="50">
+      </div>
+    </div>
+
+    <!-- Grade Temática de Canais -->
+    <div class="channels-grid-section">
+      <button class="channel-selector is-active" onclick="changeTvChannel(0)">
+        <i data-lucide="monitor-play"></i> OIO MUSIC
+      </button>
+      <button class="channel-selector" onclick="changeTvChannel(1)">
+        <i data-lucide="tv-2"></i> OIO DOCS
+      </button>
+      <button class="channel-selector" onclick="changeTvChannel(2)">
+        <i data-lucide="radio"></i> OIO TECH
+      </button>
+      <button class="channel-selector" onclick="changeTvChannel(3)">
+        <i data-lucide="layers"></i> OIO NEWS
+      </button>
+    </div>
+  </div>
+
+  <!-- Script do Motor de Transmissão Continuada -->
+  <script>
+    // Injeta de forma dinâmica o IFrame da API do YouTube
+    const scriptTag = document.createElement('script');
+    scriptTag.src = "https://www.youtube.com/iframe_api";
+    const baseScript = document.getElementsByTagName('script')[0];
+    baseScript.parentNode.insertBefore(scriptTag, baseScript);
+
+    // Estrutura Modular da Grade da StreamingTV OIO
+    // Cole aqui as IDs dos vídeos do YouTube para rodar em loop infinito
+    const tvChannelsDatabase = [
+      { name: "OIO MUSIC", items: ["jfKfPfyJRdk", "tNkZsKe7hyk"] },
+      { name: "OIO DOCS", items: ["8D8V_68cW_g", "2S1Z_9PZpW0"] },
+      { name: "OIO TECH", items: ["d_T0_p2-6rQ", "UuV2B96b0ww"] },
+      { name: "OIO NEWS", items: ["dQw4w9WgXcQ", "3JZ_D3ELwOQ"] }
+    ];
+
+    let activeChannel = 0;
+    let activeVideo = 0;
+    let tvPlayerEngine;
+
+    // Inicializador padrão disparado pela API do YouTube
+    function onYouTubeIframeAPIReady() {
+      tvPlayerEngine = new YT.Player('yt-hidden-player', {
+        height: '100%',
+        width: '100%',
+        videoId: tvChannelsDatabase[activeChannel].items[activeVideo],
+        playerVars: {
+          'autoplay': 1,
+          'controls': 0, // Remove barra nativa para forçar o nosso design
+          'rel': 0,
+          'modestbranding': 1,
+          'showinfo': 0
+        },
+        events: {
+          'onReady': prepareTvControls,
+          'onStateChange': monitorTvPlayback
+        }
+      });
+    }
+
+    function prepareTvControls(event) {
+      tvPlayerEngine.setVolume(50);
+      
+      // Mapeamento dos gatilhos nos elementos da interface
+      document.getElementById('control-play-pause').addEventListener('click', triggerPlayPause);
+      document.getElementById('control-next-video').addEventListener('click', triggerNextVideo);
+      document.getElementById('control-volume').addEventListener('input', triggerVolumeMixer);
+      
+      // Renderiza os ícones Lucide
+      lucide.createIcons();
+    }
+
+    function monitorTvPlayback(event) {
+      // Loop Contínuo: Se o vídeo terminar, puxa o próximo de forma linear
+      if (event.data === YT.PlayerState.ENDED) {
+        triggerNextVideo();
+      }
+    }
+
+    function triggerPlayPause() {
+      const state = tvPlayerEngine.getPlayerState();
+      const txt = document.getElementById('txt-play');
+      const btn = document.getElementById('control-play-pause');
+      
+      if (state === YT.PlayerState.PLAYING) {
+        tvPlayerEngine.pauseVideo();
+        btn.innerHTML = '<i data-lucide="play"></i> <span id="txt-play">Play</span>';
+      } else {
+        tvPlayerEngine.playVideo();
+        btn.innerHTML = '<i data-lucide="pause"></i> <span id="txt-play">Pause</span>';
+      }
+      lucide.createIcons(); // Recarrega o ícone alterado
+    }
+
+    function triggerNextVideo() {
+      activeVideo++;
+      const currentList = tvChannelsDatabase[activeChannel].items;
+      
+      if (activeVideo >= currentList.length) {
+        activeVideo = 0; // Reseta para o primeiro vídeo criando um ciclo infinito
+      }
+      
+      tvPlayerEngine.loadVideoById(currentList[activeVideo]);
+      resetPlayButtonState();
+    }
+
+    function changeTvChannel(channelIndex) {
+      activeChannel = channelIndex;
+      activeVideo = 0; // Reinicia a fila do canal escolhido
+      
+      tvPlayerEngine.loadVideoById(tvChannelsDatabase[activeChannel].items[activeVideo]);
+      resetPlayButtonState();
+
+      // Atualização visual do estado dos botões da grade
+      const targetButtons = document.querySelectorAll('.channel-selector');
+      targetButtons.forEach((btn, idx) => {
+        if (idx === channelIndex) {
+          btn.classList.add('is-active');
+        } else {
+          btn.classList.remove('is-active');
+        }
+      });
+    }
+
+    function triggerVolumeMixer(e) {
+      const volValue = e.target.value;
+      tvPlayerEngine.setVolume(volValue);
+      
+      const volIcon = document.getElementById('volume-icon');
+      if(volValue == 0) {
+        volIcon.setAttribute('data-lucide', 'volume-x');
+      } else if(volValue < 50) {
+        volIcon.setAttribute('data-lucide', 'volume-1');
+      } else {
+        volIcon.setAttribute('data-lucide', 'volume-2');
+      }
+      lucide.createIcons();
+    }
+
+    function resetPlayButtonState() {
+      const btn = document.getElementById('control-play-pause');
+      btn.innerHTML = '<i data-lucide="pause"></i> <span id="txt-play">Pause</span>';
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>
