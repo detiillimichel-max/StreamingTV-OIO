@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>OIO TV - Glass Original</title>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script type="importmap">{"imports":{"@supabase/supabase-js":"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm"}}</script>
+<style>
+:root{--bg:#f8fafc;--bg2:#eef2f7;--cyan:#00a294;--cyan2:#00d1b8;--text:#0f172a;--muted:#64748b;--glass:rgba(255,255,255,0.72);--glass2:rgba(255,255,255,0.92);--bd:rgba(15,23,42,0.06);--shadow:0 8px 32px rgba(15,23,42,0.08);--shadow2:0 16px 48px rgba(15,23,42,0.12);--radius:20px;--yellow:#ffe600}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:linear-gradient(180deg,#0f172a 0%, #1a2a3a 120px, var(--bg) 120px, var(--bg2) 100%);color:var(--text);min-height:100vh}
+header{position:sticky;top:0;z-index:30;background:rgba(15,23,42,0.88);backdrop-filter:blur(24px) saturate(1.2);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,255,255,.08);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;color:#fff}
+.logo{font-weight:900;font-size:20px;letter-spacing:.02em}.logo b{color:var(--cyan2)}
+.glass-card{background:var(--glass2);backdrop-filter:blur(24px) saturate(1.3);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.7);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin:14px 16px}
+.glass-dark{background:rgba(15,23,42,0.88);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius);color:#fff}
+.row{display:flex;gap:12px;overflow-x:auto;padding:6px 0 10px;scroll-snap-type:x mandatory}
+.row::-webkit-scrollbar{display:none}
+.benefit{flex-shrink:0;width:200px;background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:16px;overflow:hidden;color:#fff;scroll-snap-align:start;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.08)}
+.benefit .b-top{height:110px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;position:relative}
+.benefit .b-logo{position:absolute;left:50%;bottom:-20px;transform:translateX(-50%);width:64px;height:64px;background:#fff;border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow2);font-weight:900;color:#000;font-size:13px;text-align:center}
+.benefit .b-info{padding:30px 12px 14px;text-align:center}
+.b-off{font-weight:900;font-size:18px}
+.film-card{flex-shrink:0;width:300px;border-radius:16px;overflow:hidden;position:relative;background:#000;scroll-snap-align:start;box-shadow:var(--shadow)}
+.film-card img{width:100%;height:180px;object-fit:cover;opacity:.9}
+.film-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85),transparent 60%);display:flex;align-items:flex-end;padding:12px;color:#fff}
+.film-badge{position:absolute;bottom:12px;left:12px;background:var(--yellow);color:#000;font-size:11px;font-weight:800;padding:5px 12px;border-radius:20px;display:flex;gap:4px;align-items:center}
+.title-card{flex-shrink:0;width:148px;border-radius:14px;overflow:hidden;background:var(--glass2);border:1px solid rgba(255,255,255,.7);box-shadow:var(--shadow);scroll-snap-align:start;cursor:pointer;transition:.2s}
+.title-card:hover{transform:translateY(-3px);box-shadow:var(--shadow2)}
+.title-card img{width:100%;height:200px;object-fit:cover}
+.page{display:none;max-width:1280px;margin:0 auto;padding:0 0 110px}.page.active{display:block}
+.bottom{position:fixed;bottom:0;left:0;right:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(24px);border-top:1px solid var(--bd);padding:6px 8px calc(6px + env(safe-area-inset-bottom));display:flex;justify-content:space-around;align-items:flex-end;box-shadow:0 -8px 32px rgba(0,0,0,.06)}
+.b-item{font-size:10px;color:var(--muted);text-align:center;cursor:pointer;min-width:56px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px;border-radius:10px}
+.b-item.active{color:#000;background:rgba(0,0,0,.06)}
+.b-plus{width:52px;height:52px;background:#0f172a;border-radius:100px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;margin-bottom:6px;box-shadow:var(--shadow2);cursor:pointer}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;z-index:70;padding:16px}
+.modal.show{display:flex}
+.m-box{background:rgba(255,255,255,.96);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.9);border-radius:20px;padding:18px;max-width:420px;width:100%;box-shadow:var(--shadow2)}
+.icon-btn{width:38px;height:38px;border-radius:12px;background:rgba(15,23,42,.06);border:1px solid rgba(15,23,42,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s}
+.icon-btn:hover{background:rgba(15,23,42,.1)}
+.small{font-size:11px;color:var(--muted);line-height:1.4}
+.btn{background:#0f172a;color:#fff;border:none;padding:10px 18px;border-radius:100px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:13px}
+.btn.cyan{background:var(--cyan);color:#fff}
+.section-title{font-size:18px;font-weight:800;padding:0 16px;margin-top:22px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">OIO <b>TV</b></div>
+<div style="display:flex;gap:8px"><div class="icon-btn" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.12);color:#fff"><i data-lucide="cast"></i></div><div class="icon-btn" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.12);color:#fff"><i data-lucide="settings"></i></div></div>
+</header>
+
+<div class="page active" id="page-home">
+<div class="glass-card">
+<h2 style="font-size:20px;font-weight:800">Benefícios em entretenimento</h2>
+<p class="small">Conteúdo original OIO • Produção com Edge Functions</p>
+<div class="row" id="row-beneficios" style="margin-top:12px">
+<div class="benefit"><div class="b-top" style="background:linear-gradient(135deg,#0f172a,#334155)">OIO Originals</div><div class="b-logo">OIO<br>TV</div><div class="b-info"><div class="b-off">Exclusivo</div><div class="small">OIO TV</div></div></div>
+<div class="benefit"><div class="b-top" style="background:linear-gradient(135deg,#00a294,#00d1b8)">OIO Kids</div><div class="b-logo" style="background:#00a294;color:#fff">KIDS</div><div class="b-info"><div class="b-off">Livre</div><div class="small">Infantil • Libras</div></div></div>
+<div class="benefit"><div class="b-top" style="background:linear-gradient(135deg,#7c2d12,#ea580c)">Ao Vivo</div><div class="b-logo" style="background:#ff3b3b;color:#fff">LIVE</div><div class="b-info"><div class="b-off">Ao Vivo</div><div class="small">Twitch • YouTube</div></div></div>
+<div class="benefit"><div class="b-top" style="background:linear-gradient(135deg,#1e1b4b,#4338ca)">Cursos</div><div class="b-logo">EDU</div><div class="b-info"><div class="b-off">Grátis</div><div class="small">Cursos • Docs</div></div></div>
+</div>
+</div>
+
+<div class="section-title"><span>Filmes sem anúncios</span><span class="small">TMDB • Vimeo</span></div>
+<div style="padding:0 16px"><div class="row" id="row-filmes-sem-anuncio">
+<div class="film-card"><img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400"><div class="film-overlay"><div><div style="font-size:22px;font-weight:900;color:#fff">A ORIGEM</div><div class="small" style="color:rgba(255,255,255,.8)">Ação, Ficção • 2h 28min • 2010</div></div></div><div class="film-badge"><i data-lucide="play" style="width:12px;height:12px"></i> Sem pausas</div></div>
+<div class="film-card"><img src="https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=400"><div class="film-overlay"><div><div style="font-size:20px;font-weight:800;color:#fff">INTERESTELAR</div><div class="small" style="color:rgba(255,255,255,.8)">Ficção • 2h 49min • 2014</div></div></div><div class="film-badge">4K • AD • Libras</div></div>
+</div></div>
+
+<div class="section-title"><span>Títulos que você não vai parar de assistir</span><span class="small">Top 10 • daily Edge</span></div>
+<div style="padding:0 16px"><div class="row" id="row-titulos">
+<div class="title-card"><img src="https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=300"><div style="padding:8px"><b style="font-size:12px">UNDER THE DOME</b><div class="small">Ficção • Original</div></div></div>
+<div class="title-card"><img src="https://images.unsplash.com/photo-1485846234645-a62644f84728?w=300"><div style="padding:8px"><b style="font-size:12px">CSI: MIAMI</b><div class="small">Policial</div></div></div>
+<div class="title-card"><img src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300"><div style="padding:8px"><b style="font-size:12px">Charmed</b><div class="small">Fantasia</div></div></div>
+<div class="title-card"><img src="https://images.unsplash.com/photo-1594909771206-002d0795506f?w=300"><div style="padding:8px"><b style="font-size:12px">The Nanny</b><div class="small">Comédia</div></div></div>
+</div></div>
+
+<div class="glass-card"><h3 style="display:flex;gap:8px;align-items:center"><i data-lucide="play"></i> Continuar assistindo</h3><div class="small">Dados reais do Supabase • tvoio_continue_watching</div><div class="row" id="row-cont" style="margin-top:10px"></div></div>
+
+<div class="glass-card"><h3 style="display:flex;gap:8px"><i data-lucide="gamepad2-icon"></i> Hubs de Jogos</h3><div class="row">
+<a href="https://detiillimichel-max.github.io/hubs-de-jogos/" target="_blank" class="title-card"><div style="height:100px;background:#0f172a;display:flex;align-items:center;justify-content:center;color:#fff"><i data-lucide="gamepad2-icon"></i></div><div style="padding:8px"><b style="font-size:11px">Hubs de Jogos</b></div></a>
+<a href="https://detiillimichel-max.github.io/Jornada-do-mamute-/" target="_blank" class="title-card"><div style="height:100px;background:#5a3a1a;display:flex;align-items:center;justify-content:center">🦣</div><div style="padding:8px"><b style="font-size:11px">Jornada Mamute</b></div></a>
+<a href="https://detiillimichel-max.github.io/Nota-adesiva/" target="_blank" class="title-card"><div style="height:100px;background:#00a294;display:flex;align-items:center;justify-content:center;color:#fff"><i data-lucide="file-icon"></i></div><div style="padding:8px"><b style="font-size:11px">Nota Adesiva</b></div></a>
+<a href="https://detiillimichel-max.github.io/R-dio-America/" target="_blank" class="title-card"><div style="height:100px;background:#dc2626;display:flex;align-items:center;justify-content:center;color:#fff"><i data-lucide="radio-tower"></i></div><div style="padding:8px"><b style="font-size:11px">Rádio América</b></div></a>
+</div></div>
+</div>
+
+<div class="page" id="page-streaming">
+<div class="glass-card"><h2>📺 Streaming Original</h2><p class="small">Filmes, Séries, Docs, Educação, Infantil, Ao Vivo • Glass + Lucide • Supabase Real</p></div>
+<div class="section-title">🎬 Filmes • Áudio 30s que apaga em 2min <i data-lucide="audio-lines"></i></div><div style="padding:0 16px"><div class="row" id="s-filmes"></div></div>
+<div class="section-title">📺 Séries • Gemini + ElevenLabs</div><div style="padding:0 16px"><div class="row" id="s-series"></div></div>
+<div class="section-title">🔴 Ao Vivo</div><div style="padding:0 16px"><div class="row" id="s-live"></div></div>
+</div>
+
+<div class="page" id="page-criar">
+<div class="glass-card" style="border:1px dashed #0f172a"><h2 style="display:flex;gap:8px;align-items:center"><i data-lucide="camera-icon"></i> Criar • Vídeo 30s que some em 1 dia</h2>
+<p class="small">Some 1 dia após assistido (mensagem) • Agenda <i data-lucide="calendar1"></i> 2h/6h/1dia • Áudio 30s apaga 2min • Economia banco • Vídeos da + vão pra Clips quando &lt;40</p>
+<div style="background:#000;border-radius:16px;height:260px;display:flex;align-items:center;justify-content:center;flex-direction:column;margin:12px 0;position:relative;overflow:hidden">
+<video id="preview" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;display:none"></video>
+<div id="camPlaceholder" style="text-align:center;color:#fff"><i data-lucide="camera" style="width:40px;height:40px"></i><div class="small" style="color:#fff">Gravar 30s</div></div>
+<div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:8px"><button class="btn" onclick="startCam()" style="background:#fff;color:#000"><i data-lucide="camera-icon"></i> Câmera</button><button class="btn" id="btnRec" onclick="toggleRec()" style="display:none;background:#ff3b3b;color:#fff"><i data-lucide="pause"></i> Gravar</button></div>
+<div id="timer" style="position:absolute;top:10px;left:10px;background:#ff3b3b;color:#fff;padding:4px 8px;border-radius:20px;font-size:12px;display:none">00:30</div>
+</div>
+<input id="vTitle" placeholder="Título" style="width:100%;background:rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.08);border-radius:10px;padding:10px;margin:4px 0">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><select id="vExpire" style="background:rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.08);border-radius:10px;padding:10px"><option value="24h">Some 1 dia</option><option value="2h">Sair em 2h</option><option value="6h">Sair em 6h</option><option value="1d">Sair em 1 dia</option></select><select id="vCat" style="background:rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.08);border-radius:10px;padding:10px"><option>Clips</option><option>Filmes</option><option>Infantil</option><option>Libras</option><option>AD</option></select></div>
+<div style="display:flex;gap:8px;margin-top:8px"><button class="btn" onclick="sendAudio()" style="flex:1;background:#000;color:#fff"><i data-lucide="audio-lines"></i> Áudio 30s</button><button class="btn" onclick="publish()" style="flex:1;background:var(--yellow);color:#000"><i data-lucide="send"></i> Publicar → Shorts</button></div>
+<div style="margin-top:10px;background:#0f172a;color:#00ff88;padding:8px;border-radius:10px;font-size:10px;font-family:monospace" id="createLog">Pronto • Regra &lt;40 ativa • Glass original OIO</div>
+<div style="margin-top:10px"><h4>Meus vídeos → Shorts</h4><div class="row" id="myVideosRow"></div></div>
+</div>
+</div>
+
+<div class="page" id="page-clips">
+<div class="glass-card"><h3>🎬 Clips • Shorts Verticais Glass</h3><div class="small" id="clipsCount">YouTube Shorts + Reels + PeerTube + Vimeo + Twitch + Nasa • Vídeos da + vêm pra cá quando &lt;40</div></div>
+<div id="clipsWrap" style="padding:0 16px"></div>
+</div>
+
+<div class="page" id="page-perfil">
+<div class="glass-card" style="text-align:center"><div style="width:80px;height:80px;background:#0f172a;border-radius:100px;margin:0 auto;display:flex;align-items:center;justify-content:center;color:#ffe600"><i data-lucide="circle-user-icon" style="width:40px;height:40px"></i></div><h2>Michel Detilli</h2><p class="small">OIO TV Original • Glass • Lucide • 40+ tabelas • 18 Edges</p>
+<div style="display:flex;gap:8px;justify-content:center;margin-top:10px"><button class="icon-btn"><i data-lucide="align-center"></i></button><button class="icon-btn"><i data-lucide="languages"></i></button><button class="icon-btn" onclick="cycleBell(this)"><i data-lucide="bell-icon"></i></button></div>
+</div>
+<div class="glass-card"><h3>🔐 Acesso • <i data-lucide="eye"></i></h3><div style="display:flex;gap:8px;margin-top:8px"><input id="pass" type="password" placeholder="Senha" style="flex:1;background:rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.08);border-radius:10px;padding:10px"><button class="icon-btn" onclick="togglePass()"><i data-lucide="eye" id="eyeIcon"></i></button></div></div>
+<div class="glass-card"><h3>⚙️ Controles Glass • Lucide</h3><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+<button class="icon-btn"><i data-lucide="play"></i></button><button class="icon-btn"><i data-lucide="pause"></i></button><button class="icon-btn"><i data-lucide="fast-forward-icon"></i></button><button class="icon-btn"><i data-lucide="refresh-ccw"></i></button><button class="icon-btn"><i data-lucide="maximize-2"></i></button><button class="icon-btn"><i data-lucide="volume-2"></i></button><button class="icon-btn"><i data-lucide="volume-off"></i></button><button class="icon-btn"><i data-lucide="thumbs-up"></i></button><button class="icon-btn"><i data-lucide="thumbs-down"></i></button><button class="icon-btn"><i data-lucide="annoyed-icon"></i></button><button class="icon-btn"><i data-lucide="angry"></i></button><button class="icon-btn"><i data-lucide="heart"></i></button><button class="icon-btn"><i data-lucide="share-2"></i></button><button class="icon-btn"><i data-lucide="arrow-big-down-icon"></i></button><button class="icon-btn"><i data-lucide="audio-lines"></i></button><button class="icon-btn"><i data-lucide="check"></i></button><button class="icon-btn"><i data-lucide="check-check"></i></button>
+</div></div>
+</div>
+
+<div class="bottom">
+<div class="b-item active" onclick="nav('home')"><i data-lucide="house"></i>Home</div>
+<div class="b-item" onclick="nav('streaming')"><i data-lucide="play"></i>Streaming</div>
+<div class="b-plus" onclick="nav('criar')"><i data-lucide="camera"></i></div>
+<div class="b-item" onclick="nav('clips')"><i data-lucide="file-icon"></i>Clips</div>
+<div class="b-item" onclick="nav('perfil')"><i data-lucide="circle-user-icon"></i>Perfil</div>
+</div>
+
+<div class="modal" id="modal" onclick="if(event.target==this)closeModal()"><div class="m-box"><h2 id="mT"></h2><p class="small" id="mD"></p>
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">
+<button class="icon-btn"><i data-lucide="annoyed-icon"></i></button><button class="icon-btn"><i data-lucide="angry"></i></button><button class="icon-btn"><i data-lucide="thumbs-up"></i></button><button class="icon-btn"><i data-lucide="share-2"></i></button><button class="icon-btn"><i data-lucide="arrow-big-down-icon"></i></button><button class="icon-btn"><i data-lucide="calendar1"></i></button>
+</div>
+<div style="height:160px;background:#000;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;margin:10px 0">▶️ Player OIO TV Glass</div>
+<button class="btn" style="width:100%;background:#0f172a;color:#ffe600" onclick="closeModal()"><i data-lucide="play"></i> Assistir</button>
+</div></div>
+
+<script type="module">
+import { createClient } from '@supabase/supabase-js';
+const SUPA_URL='https://uqdwtzlzkaosnweyoyit.supabase.co';
+const SUPA_KEY='sb_publishable_uafBQD1aJ3w8_eq4meOsNQ_wzk8TwhA';
+let supabase=createClient(SUPA_URL, SUPA_KEY);
+let myVideos=[];
+lucide.createIcons();
+function el(id){return document.getElementById(id);}
+window.closeModal=()=>el('modal').classList.remove('show');
+window.playModal=(t,d)=>{el('mT').textContent=t;el('mD').textContent=d;el('modal').classList.add('show'); lucide.createIcons();}
+window.cycleBell=(btn)=>{const states=['bell-icon','bell-ring-icon','bell-off','bell-icon','bell-ring'];const cur=parseInt(btn.dataset.state||0);const nxt=(cur+1)%states.length;btn.dataset.state=nxt;btn.innerHTML=`<i data-lucide="${states[nxt]}"></i>`; lucide.createIcons();};
+window.togglePass=()=>{const p=el('pass');const ic=el('eyeIcon');if(p.type=='password'){p.type='text';ic.setAttribute('data-lucide','eye-closed');}else{p.type='password';ic.setAttribute('data-lucide','eye');}lucide.createIcons();};
+let stream=null,recorder=null,chunks=[],timer=null,sec=30;
+window.startCam=async()=>{try{stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});const v=el('preview');v.srcObject=stream;v.style.display='block';document.getElementById('camPlaceholder').style.display='none';document.getElementById('btnRec').style.display='flex';}catch(e){alert(e.message);}};
+window.toggleRec=()=>{if(recorder&&recorder.state=='recording'){recorder.stop();clearInterval(timer);el('timer').style.display='none';return;}chunks=[];sec=30;recorder=new MediaRecorder(stream);recorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};recorder.onstop=()=>{const blob=new Blob(chunks,{type:'video/webm'});const url=URL.createObjectURL(blob);myVideos.unshift({title:el('vTitle').value||`Short ${myVideos.length+1}`,url,expire:el('vExpire').value});renderMy();el('createLog').textContent=`✅ 30s gravado • Some em ${el('vExpire').value} • Vai pra Shorts`;};recorder.start();el('timer').style.display='block';timer=setInterval(()=>{sec--;el('timer').textContent=`00:${String(sec).padStart(2,'0')}`;if(sec<=0){recorder.stop();clearInterval(timer);el('timer').style.display='none';}},1000);};
+function renderMy(){const row=el('myVideosRow');row.innerHTML='';myVideos.forEach(v=>{const d=document.createElement('div');d.className='title-card';d.style.width='140px';d.innerHTML=`<div style="height:90px;background:#000;display:flex;align-items:center;justify-content:center;color:#fff"><video src="${v.url}" style="width:100%;height:100%;object-fit:cover"></video></div><div style="padding:8px"><b style="font-size:11px">${v.title}</b><div class="small">Expira ${v.expire}</div></div>`;row.appendChild(d);});}
+window.sendAudio=()=>{alert('Áudio 30s - apaga em 2min após ouvido');myVideos.unshift({title:'Áudio 30s',expire:'2min'});renderMy();};
+window.publish=async()=>{if(myVideos.length==0)myVideos.unshift({title:el('vTitle').value||'Short Demo',expire:el('vExpire').value});renderMy();try{const {data,error}=await supabase.from('videos').insert([{title:el('vTitle').value,category:el('vCat').value}]).select();el('createLog').textContent=error?`Erro: ${error.message}`:`✅ Salvo • Expira ${el('vExpire').value} • Vai pra Clips`;}catch(e){el('createLog').textContent=e.message;}alert('Publicado! Some 1 dia após assistido');};
+window.nav=(page)=>{document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.b-item').forEach(b=>b.classList.remove('active'));document.getElementById('page-'+page).classList.add('active');const map={home:0,streaming:1,criar:2,clips:3,perfil:4};document.querySelectorAll('.b-item').forEach((b,i)=>{if(i==map[page])b.classList.add('active');});if(page=='clips')loadClips();lucide.createIcons();window.scrollTo({top:0,behavior:'smooth'});};
+async function loadHome(){const {data:videos}=await supabase.from('videos').select('*').limit(10);const row=el('row-cont');if(row&&videos){row.innerHTML='';videos.slice(0,6).forEach(v=>{const d=document.createElement('div');d.className='title-card';d.style.width='140px';d.innerHTML=`<div style="height:90px;background:linear-gradient(135deg,#1e3a8a,#0a1118);display:flex;align-items:center;justify-content:center;color:#fff"><i data-lucide="play"></i></div><div style="padding:8px"><b style="font-size:11px">${(v.title||'').slice(0,18)}</b><div class="small">${v.category||''}</div></div>`;d.onclick=()=>playModal(v.title||'Video',v.description||'');row.appendChild(d);});}lucide.createIcons();}
+function loadClips(){const wrap=el('clipsWrap');wrap.innerHTML='';let clips=[...myVideos];while(clips.length<5){clips.push({title:`Demo Short ${clips.length+1}`,description:'YouTube Shorts + Reels + PeerTube + Vimeo + Twitch + Nasa'});}clips.forEach(c=>{const div=document.createElement('div');div.style.cssText='background:#000;border-radius:20px;height:60vh;margin-bottom:12px;position:relative;display:flex;align-items:flex-end;padding:16px;color:#fff';div.innerHTML=`<div style="position:absolute;inset:0;background:linear-gradient(180deg,#1e3a8a,#000)"></div><div style="position:relative;z-index:2"><b>${c.title}</b><div class="small" style="color:rgba(255,255,255,.7)">Some 1 dia após ver • Expira ${c.expire||'1 dia'}</div></div>`;div.onclick=()=>playModal(c.title||'Short',`${c.description||''} • Some 1 dia após assistido`);wrap.appendChild(div);});lucide.createIcons();}
+loadHome();lucide.createIcons();
+</script>
+</body>
+</html>
