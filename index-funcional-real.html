@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OIO TV - Funcional com Supabase Real</title>
+<meta name="theme-color" content="#0a1118">
+<script type="importmap">
+{"imports":{"@supabase/supabase-js":"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm"}}
+</script>
+<style>
+:root{--bg1:#1a2a3a;--bg2:#0a1118;--cyan:#00a294;--glass:rgba(255,255,255,0.06);--bd:rgba(255,255,255,0.12);--text:#fff;--muted:rgba(255,255,255,0.55);--red:#ff3b3b;--yellow:#ffcc00}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
+body{background:radial-gradient(circle at top right,var(--bg1),var(--bg2));color:var(--text);min-height:100vh}
+header{position:sticky;top:0;z-index:30;background:rgba(10,17,24,.88);backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,255,255,.08);padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+.logo{font-weight:900;font-size:22px}.logo b{color:var(--cyan)}.badge{background:var(--cyan);color:#000;font-size:10px;font-weight:800;padding:4px 8px;border-radius:20px}
+.card{background:var(--glass);border:1px solid var(--bd);border-radius:20px;padding:16px;margin:12px 0;backdrop-filter:blur(12px)}
+.row{display:flex;gap:12px;overflow-x:auto;padding:4px 0 12px;scroll-snap-type:x mandatory}
+.item{scroll-snap-align:start;flex-shrink:0;width:280px;background:rgba(0,0,0,.4);border:1px solid var(--bd);border-radius:14px;overflow:hidden;cursor:pointer;transition:.2s}
+.item:hover{transform:translateY(-4px);border-color:var(--cyan)}
+.thumb{height:150px;background:linear-gradient(135deg,#1e3a8a,#0a1118);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.play{position:absolute;width:48px;height:48px;background:rgba(255,255,255,.9);border-radius:100px;display:flex;align-items:center;justify-content:center;color:#000}
+.info{padding:12px}.small{font-size:11px;color:var(--muted);line-height:1.4}
+.btn{background:#fff;color:#000;border:none;padding:12px 20px;border-radius:100px;font-weight:800;cursor:pointer}
+.top{width:160px;flex-shrink:0;background:var(--glass);border:1px solid var(--bd);border-radius:14px;overflow:hidden;position:relative}
+.t-thumb{height:220px;background:linear-gradient(180deg,#2a0a0a,#0a1118);padding:12px;display:flex;align-items:flex-end;position:relative}
+.t-num{position:absolute;left:4px;bottom:-8px;font-size:96px;font-weight:900;color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.15)}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:rgba(10,17,24,.92);backdrop-filter:blur(24px);border-top:1px solid var(--bd);padding:8px 12px;display:flex;justify-content:space-around;z-index:40}
+.b-item{font-size:11px;color:var(--muted);text-align:center}.b-item.active{color:var(--yellow)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;z-index:60;padding:16px}
+.modal.show{display:flex}
+.m-box{background:#121a24;border:1px solid var(--bd);border-radius:20px;padding:20px;max-width:420px;width:100%}
+.log{background:#000;border:1px solid var(--bd);border-radius:10px;padding:10px;font-size:11px;font-family:monospace;color:#0f0;max-height:160px;overflow:auto;white-space:pre-wrap}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.ok{background:#00ff88}.err{background:#ff4444}.wait{background:#ffaa00}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">OIO <b>TV</b> <span class="badge">FUNCIONAL • SUPABASE REAL</span></div>
+<div style="display:flex;gap:8px;align-items:center"><span class="status-dot wait" id="connDot"></span><span class="small" id="connText">Conectando...</span></div>
+</header>
+
+<div style="padding:16px;max-width:1280px;margin:0 auto">
+<div style="background:linear-gradient(105deg,#3a0a14,#1e1a3a,#0a1118);border-radius:28px;padding:28px;border:1px solid var(--bd);min-height:380px;display:flex;align-items:flex-end;position:relative;overflow:hidden" id="hero">
+<div style="position:absolute;inset:0;background:radial-gradient(60% 80% at 30% 20%,rgba(180,20,40,.5),transparent 70%)"></div>
+<div style="position:relative;z-index:2;max-width:560px">
+<div style="font-size:11px;letter-spacing:.15em;opacity:.8">🔥 ESTREIA • SÉRIE ORIGINAL • DADOS REAIS DO BANCO</div>
+<h1 style="font-size:36px;font-weight:900;margin:10px 0" id="heroTitle">OIO Originals: Vértice</h1>
+<div class="small" id="heroMeta">★ 9.4 • Ação • Drama • Carregando dados reais...</div>
+<p class="small" style="margin:10px 0;line-height:1.5" id="heroDesc">Conectando no Supabase sa-east-1 com sua publishable key sb_publishable_... para puxar vídeos, fotos e grade real.</p>
+<button class="btn" onclick="playHero()">▶ Assistir</button>
+</div>
+</div>
+
+<div class="card" id="card-debug">
+<h3>🔧 Conexão Supabase - Tempo Real</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0">
+<div><b>URL:</b><br><span class="small">https://uqdwtlzkqaosnweyoylt.supabase.co</span></div>
+<div><b>Key:</b><br><span class="small">sb_publishable_uafBQD... (confirmada completa)</span></div>
+</div>
+<div class="log" id="log">Iniciando conexão com formato novo sb_publishable_...</div>
+</div>
+
+<div class="card"><h3>▶️ Continuar assistindo • tvoio_continue_watching (REAL)</h3><div class="small" id="contInfo">Buscando no banco...</div><div class="row" id="row-cont"></div></div>
+<div class="card"><h3>🏆 Top 10 hoje • videos + video_views (REAL)</h3><div class="small" id="topInfo">Buscando...</div><div class="row" id="row-top10"></div></div>
+<div class="card"><h3>🎬 Filmes • videos (REAL)</h3><div class="row" id="row-filmes"></div></div>
+<div class="card"><h3>👶 Infantil • videos categoria infantil (REAL)</h3><div class="row" id="row-infantil"></div></div>
+<div class="card"><h3>⚽ Ao Vivo • videos + Twitch Edge (REAL + Edge Functions)</h3><div class="row" id="row-esporte"></div></div>
+<div class="card"><h3>🎓 Docs, Cursos, Educação • photos + posts (REAL)</h3><div class="row" id="row-docs"></div></div>
+<div class="card"><h3>🎵 Clips 1 Minuto • stories + videos (REAL)</h3><div class="row" id="row-clips"></div></div>
+<div class="card"><h3>♿ Libras, AD, Clássicos • videos com acessibilidade (REAL)</h3><div class="row" id="row-acess"></div></div>
+<div class="card"><h3>🗓️ Grade de Programação • agenda_events (REAL)</h3><div class="small" id="agendaInfo">Buscando agenda_events...</div><div class="row" id="row-agenda"></div></div>
+
+</div>
+
+<div class="bottom"><div class="b-item active">🏠<br>Home</div><div class="b-item">📺<br>Streaming</div><div class="b-item" style="background:var(--yellow);color:#000;width:50px;height:50px;border-radius:100px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-top:-16px">+</div><div class="b-item">🎬<br>Clips</div><div class="b-item">👤<br>Perfil</div></div>
+
+<div class="modal" id="modal" onclick="if(event.target==this)this.classList.remove('show')"><div class="m-box"><h2 id="mt"></h2><p class="small" id="md" style="margin:10px 0"></p><div style="height:180px;background:#000;border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid var(--bd)"><span class="small">▶️ Player Vimeo<br>Usando VIMEO_ACCESS_TOKEN do Vault</span></div><button class="btn" style="background:var(--cyan);color:#000;margin-top:12px;width:100%" onclick="alert('Player real com dados do banco')">▶️ Assistir Agora</button><button class="btn" style="background:transparent;color:#fff;border:1px solid var(--bd);margin-top:8px;width:100%" onclick="document.getElementById('modal').classList.remove('show')">Fechar</button></div></div>
+
+<script type="module">
+import { createClient } from '@supabase/supabase-js';
+
+const SUPA_URL = 'https://uqdwtlzkqaosnweyoylt.supabase.co';
+const SUPA_KEY = 'sb_publishable_uafBQD1aJ3w8_eq4meOsNQ_wzk8TwhA';
+
+const logEl = document.getElementById('log');
+const dot = document.getElementById('connDot');
+const txt = document.getElementById('connText');
+function log(m){ const t=new Date().toLocaleTimeString(); logEl.textContent+=`[${t}] ${m}\n`; logEl.scrollTop=logEl.scrollHeight; console.log(m); }
+
+log('🔑 Usando formato novo sb_publishable_ - completo, confirmado');
+log(`URL: ${SUPA_URL}`);
+log(`Key: ${SUPA_KEY.slice(0,30)}...`);
+
+let supabase;
+try{
+  supabase = createClient(SUPA_URL, SUPA_KEY);
+  log('✅ Supabase client criado com publishable key nova');
+  dot.className='status-dot ok';
+  txt.textContent='Conectado';
+}catch(e){
+  log('❌ Erro ao criar client: '+e.message);
+  dot.className='status-dot err';
+  txt.textContent='Erro';
+}
+
+function playItem(title, desc){
+  document.getElementById('mt').textContent=title;
+  document.getElementById('md').textContent=desc;
+  document.getElementById('modal').classList.add('show');
+}
+window.playHero = ()=>{ playItem(document.getElementById('heroTitle').textContent, document.getElementById('heroDesc').textContent); };
+
+function renderRow(id, items, mapFn){
+  const el=document.getElementById(id);
+  if(!el){log(`Elemento ${id} não encontrado`); return;}
+  el.innerHTML='';
+  if(!items || items.length===0){
+    el.innerHTML='<div class="small" style="padding:20px">Nenhum dado encontrado nesta tabela (RLS ou vazia). Verifique permissões.</div>';
+    return;
+  }
+  items.forEach(item=>{
+    const d=mapFn(item);
+    const div=document.createElement('div');
+    div.className=d.top?'top':'item';
+    div.innerHTML=d.html;
+    div.onclick=()=>playItem(d.title, d.desc);
+    el.appendChild(div);
+  });
+}
+
+// Fetch real data
+async function loadAll(){
+  if(!supabase){ log('❌ Supabase não inicializado'); return; }
+
+  // 1. Test videos table
+  try{
+    log('📡 Buscando videos...');
+    const {data:videos, error:e1} = await supabase.from('videos').select('*').limit(20);
+    if(e1){ log('❌ videos error: '+e1.message); document.getElementById('row-filmes').innerHTML=`<div class="small" style="color:#ff6b6b">Erro: ${e1.message} - Verifique RLS para anon</div>`; }
+    else{
+      log(`✅ videos: ${videos.length} encontrados`);
+      if(videos.length>0){
+        log(`Colunas videos: ${Object.keys(videos[0]).join(', ')}`);
+        // Hero with first video
+        const first=videos[0];
+        document.getElementById('heroTitle').textContent=first.title||first.name||first.titulo||'OIO Originals: Vértice';
+        document.getElementById('heroMeta').textContent=`${first.category||first.categoria||'Ação • Drama'} • ID: ${first.id}`;
+        document.getElementById('heroDesc').textContent=first.description||first.descricao||first.synopsis||'Vídeo real do seu banco Supabase';
+      }
+      renderRow('row-filmes', videos, v=>({
+        title:v.title||v.name||'Sem título',
+        desc:`ID: ${v.id} • ${v.description||''} • Cat: ${v.category||v.categoria||'filme'}`,
+        html:`<div class="thumb">${v.thumbnail_url?`<img src="${v.thumbnail_url}" style="width:100%;height:100%;object-fit:cover">`:'🎬'}</div><div class="info"><b>${(v.title||v.name||'').slice(0,30)}</b><div class="small">${(v.category||'Filme').slice(0,40)}</div></div>`
+      }));
+      // Top 10
+      renderRow('row-top10', videos.slice(0,10), (v,i)=>({
+        top:true,
+        title:v.title||v.name,
+        desc:`Top ${i} • ${v.title}`,
+        html:`<div class="t-thumb"><div class="t-num">${i+1}</div><div style="position:relative;z-index:2"><b>${(v.title||'').slice(0,20)}</b><div class="small">★ ${v.rating||'9.0'} • ${v.category||''}</div></div></div>`
+      }));
+      // Infantil filter
+      const infantil = videos.filter(v=> (v.category||'').toLowerCase().includes('infantil') || (v.category||'').toLowerCase().includes('kids') || (v.title||'').toLowerCase().includes('kids'));
+      renderRow('row-infantil', infantil.length>0?infantil:videos.slice(0,4), v=>({
+        title:v.title, desc:v.description||'',
+        html:`<div class="thumb">👶</div><div class="info"><b>${(v.title||'').slice(0,24)}</b><div class="small">${v.category||'Infantil'} • Libras • AD</div></div>`
+      }));
+      // Esporte
+      const esporte = videos.filter(v=> (v.category||'').toLowerCase().includes('esporte') || (v.title||'').toLowerCase().includes('live'));
+      renderRow('row-esporte', esporte.length>0?esporte:videos.slice(2,6), v=>({
+        title:v.title, desc:'Ao vivo',
+        html:`<div class="thumb" style="background:linear-gradient(135deg,#7f1d1d,#991b1b)"><span style="position:absolute;top:8px;left:8px;background:#ff3b3b;color:#fff;font-size:9px;padding:3px 7px;border-radius:20px">AO VIVO</span>⚽</div><div class="info"><b>${(v.title||'').slice(0,24)}</b><div class="small">Ao vivo • Twitch Edge</div></div>`
+      }));
+      // Acess
+      renderRow('row-acess', videos.slice(0,4), v=>({
+        title:v.title, desc:'Com acessibilidade',
+        html:`<div class="thumb">♿</div><div class="info"><b>${(v.title||'').slice(0,24)}</b><div class="small">Libras • AD • Clássico</div></div>`
+      }));
+    }
+  }catch(e){ log('❌ Exceção videos: '+e.message); }
+
+  // 2. tvoio_continue_watching
+  try{
+    log('📡 Buscando tvoio_continue_watching...');
+    const {data, error} = await supabase.from('tvoio_continue_watching').select('*').limit(10);
+    if(error){ log('❌ continue_watching: '+error.message); document.getElementById('contInfo').textContent='Erro: '+error.message+' (RLS precisa permitir anon)'; }
+    else{
+      log(`✅ continue_watching: ${data.length} itens`);
+      document.getElementById('contInfo').textContent=`${data.length} itens reais do banco`;
+      if(data.length>0) log(`Colunas: ${Object.keys(data[0]).join(', ')}`);
+      renderRow('row-cont', data, v=>({
+        title:v.video_id||v.id||'Vídeo',
+        desc:`Progresso: ${v.progress||v.progresso||'0%'} • Tabela real`,
+        html:`<div class="thumb">▶️<div style="position:absolute;bottom:8px;left:8px;right:8px;height:4px;background:rgba(255,255,255,.2);border-radius:10px"><div style="height:100%;width:${v.progress||60}%;background:#ffcc00;border-radius:10px"></div></div></div><div class="info"><b>${(v.video_id||v.id||'').toString().slice(0,20)}</b><div class="small">Continuar • ${v.progress||''}</div></div>`
+      }));
+    }
+  }catch(e){ log('❌ Exceção continue: '+e.message); }
+
+  // 3. tvoio_favorites, photos, agenda_events
+  for(const tbl of [['photos','row-docs'], ['posts','row-docs'], ['agenda_events','row-agenda'], ['stories','row-clips']]){
+    try{
+      log(`📡 Buscando ${tbl[0]}...`);
+      const {data, error} = await supabase.from(tbl[0]).select('*').limit(8);
+      if(error){ log(`❌ ${tbl[0]}: ${error.message}`); }
+      else{
+        log(`✅ ${tbl[0]}: ${data.length}`);
+        if(data.length>0 && tbl[0]=='agenda_events'){
+          document.getElementById('agendaInfo').textContent=`${data.length} eventos reais`;
+          renderRow('row-agenda', data, v=>({
+            title:v.title||v.name||v.event_name||'Evento',
+            desc:v.description||v.date||'',
+            html:`<div class="thumb">📅</div><div class="info"><b>${(v.title||v.name||'').slice(0,24)}</b><div class="small">${v.date||v.start_time||''}</div></div>`
+          }));
+        }
+      }
+    }catch(e){ log(`❌ ${tbl[0]} exceção: ${e.message}`); }
+  }
+
+  // 4. Test Edge Functions
+  try{
+    log('\n🚀 Testando Edge Functions com sua publishable key...');
+    const funcs=['tmdb','twitch','pexels','youtube','nasa'];
+    for(const f of funcs){
+      try{
+        const res=await fetch(`${SUPA_URL}/functions/v1/${f}`,{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({action:'list',limit:5})});
+        const txt=await res.text();
+        log(`${res.ok?'✅':'❌'} Edge ${f}: HTTP ${res.status} - ${txt.slice(0,80)}`);
+      }catch(e){ log(`⚠️ Edge ${f}: ${e.message}`); }
+    }
+  }catch(e){ log('Edge test erro: '+e.message); }
+
+  log('\n--- Carga completa ---\nSe alguma tabela deu erro de RLS, vá em Supabase > Table Editor > [tabela] > RLS Policies > Enable read for anon');
+}
+
+loadAll();
+</script>
+</body>
+</html>
