@@ -7,11 +7,14 @@
   
   <!-- Ícones da Biblioteca Lucide -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Importando Cliente Supabase Seguro para HTML Puro -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Estilos Premium: Glassmorphism + Identidade OIO Ciano -->
   <style>
     :root {
-      --bg-gradient: radial-gradient(circle at top left, #0c1d26, #050d11); /* Petróleo ultra profundo */
+      --bg-gradient: radial-gradient(circle at top left, #0c1d26, #050d11);
       --oio-cyan: #00a294;
       --oio-dark-cyan: #0c5861;
       --glass-bg: rgba(255, 255, 255, 0.04);
@@ -56,7 +59,7 @@
       gap: 20px;
     }
 
-    /* Tela de Exibição (Proporção de Cinema 16:9) */
+    /* Tela de Exibição */
     .tv-screen-frame {
       position: relative;
       width: 100%;
@@ -77,7 +80,7 @@
       border: none;
     }
 
-    /* Painel Inferior de Controles Customizados */
+    /* Painel Inferior de Controles */
     .tv-dashboard-controls {
       display: flex;
       flex-wrap: wrap;
@@ -96,7 +99,6 @@
       gap: 14px;
     }
 
-    /* Botões Customizados no Estilo OIO */
     .action-button {
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid var(--glass-border);
@@ -119,7 +121,6 @@
       transform: translateY(-1px);
     }
 
-    /* Controle Deslizante de Volume */
     .volume-box {
       display: flex;
       align-items: center;
@@ -147,7 +148,6 @@
       box-shadow: 0 0 8px rgba(0, 162, 148, 0.6);
     }
 
-    /* Módulo de Canais */
     .channels-grid-section {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -181,7 +181,6 @@
       color: var(--text-main);
     }
 
-    /* Estado Ativo com o Degradê de Identidade OIO */
     .channel-selector.is-active {
       background: linear-gradient(135deg, var(--oio-cyan), var(--oio-dark-cyan));
       border-color: var(--oio-cyan);
@@ -197,12 +196,10 @@
 <body>
 
   <div class="tv-main-container">
-    <!-- Tela do Player Nativo -->
     <div class="tv-screen-frame">
       <div id="yt-hidden-player"></div>
     </div>
 
-    <!-- Barra de Ações Customizada -->
     <div class="tv-dashboard-controls">
       <div class="control-group">
         <button class="action-button" id="control-play-pause">
@@ -219,7 +216,6 @@
       </div>
     </div>
 
-    <!-- Grade Temática de Canais -->
     <div class="channels-grid-section">
       <button class="channel-selector is-active" onclick="changeTvChannel(0)">
         <i data-lucide="monitor-play"></i> OIO MUSIC
@@ -236,17 +232,20 @@
     </div>
   </div>
 
-  <!-- Script do Motor de Transmissão Continuada -->
   <script>
-    // Injeta de forma dinâmica o IFrame da API do YouTube
-    const scriptTag = document.createElement('script');
-    scriptTag.src = "https://www.youtube.com/iframe_api";
-    const baseScript = document.getElementsByTagName('script')[0];
-    baseScript.parentNode.insertBefore(scriptTag, baseScript);
+    // --- MÓDULO SUPABASE: CONEXÃO COM O VAULT / EDGE FUNCTIONS ---
+    // Quando você for ligar na nuvem, cole sua URL e Chave Pública aqui:
+    const SUPABASE_URL = 'SUA_URL_AQUI'; 
+    const SUPABASE_ANON_KEY = 'SUA_CHAVE_AQUI';
+    
+    let supabaseClient = null;
+    if (SUPABASE_URL !== 'SUA_URL_AQUI') {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
 
-    // Estrutura Modular da Grade da StreamingTV OIO
-    // Cole aqui as IDs dos vídeos do YouTube para rodar em loop infinito
-    const tvChannelsDatabase = [
+    // --- MÓDULO DE DADOS (FALLBACK DE SEGURANÇA) ---
+    // Estes dados garantem que a TV funcionará 100% mesmo offline ou sem as chaves
+    let tvChannelsDatabase = [
       { name: "OIO MUSIC", items: ["jfKfPfyJRdk", "tNkZsKe7hyk"] },
       { name: "OIO DOCS", items: ["8D8V_68cW_g", "2S1Z_9PZpW0"] },
       { name: "OIO TECH", items: ["d_T0_p2-6rQ", "UuV2B96b0ww"] },
@@ -257,15 +256,41 @@
     let activeVideo = 0;
     let tvPlayerEngine;
 
-    // Inicializador padrão disparado pela API do YouTube
-    function onYouTubeIframeAPIReady() {
+    // Injeta a API do YouTube
+    const scriptTag = document.createElement('script');
+    scriptTag.src = "https://www.youtube.com/iframe_api";
+    const baseScript = document.getElementsByTagName('script')[0];
+    baseScript.parentNode.insertBefore(scriptTag, baseScript);
+
+    // Inicializador assíncrono: Tenta buscar os vídeos reais do Supabase antes de ligar a TV
+    async function onYouTubeIframeAPIReady() {
+      
+      // Tenta buscar da Edge Function ou da tabela
+      if (supabaseClient) {
+        try {
+          // Descomente a linha abaixo para chamar sua Edge Function quando estiver pronta:
+          // const { data, error } = await supabaseClient.functions.invoke('youtube');
+          
+          // Ou chame a tabela direto para testar:
+          // const { data, error } = await supabaseClient.from('videos').select('*');
+          
+          if (data && data.length > 0) {
+             console.log("Conexão Supabase bem sucedida! Dados reais carregados.");
+             // Aqui no futuro mapearemos a variável 'data' para dentro do 'tvChannelsDatabase'
+          }
+        } catch (error) {
+          console.warn("Módulo Fallback ativado: Protegendo interface com vídeos locais.", error);
+        }
+      }
+
+      // Liga o motor da TV (Seja com dados em nuvem ou locais)
       tvPlayerEngine = new YT.Player('yt-hidden-player', {
         height: '100%',
         width: '100%',
         videoId: tvChannelsDatabase[activeChannel].items[activeVideo],
         playerVars: {
           'autoplay': 1,
-          'controls': 0, // Remove barra nativa para forçar o nosso design
+          'controls': 0,
           'rel': 0,
           'modestbranding': 1,
           'showinfo': 0
@@ -279,18 +304,13 @@
 
     function prepareTvControls(event) {
       tvPlayerEngine.setVolume(50);
-      
-      // Mapeamento dos gatilhos nos elementos da interface
       document.getElementById('control-play-pause').addEventListener('click', triggerPlayPause);
       document.getElementById('control-next-video').addEventListener('click', triggerNextVideo);
       document.getElementById('control-volume').addEventListener('input', triggerVolumeMixer);
-      
-      // Renderiza os ícones Lucide
       lucide.createIcons();
     }
 
     function monitorTvPlayback(event) {
-      // Loop Contínuo: Se o vídeo terminar, puxa o próximo de forma linear
       if (event.data === YT.PlayerState.ENDED) {
         triggerNextVideo();
       }
@@ -308,7 +328,7 @@
         tvPlayerEngine.playVideo();
         btn.innerHTML = '<i data-lucide="pause"></i> <span id="txt-play">Pause</span>';
       }
-      lucide.createIcons(); // Recarrega o ícone alterado
+      lucide.createIcons();
     }
 
     function triggerNextVideo() {
@@ -316,7 +336,7 @@
       const currentList = tvChannelsDatabase[activeChannel].items;
       
       if (activeVideo >= currentList.length) {
-        activeVideo = 0; // Reseta para o primeiro vídeo criando um ciclo infinito
+        activeVideo = 0;
       }
       
       tvPlayerEngine.loadVideoById(currentList[activeVideo]);
@@ -325,12 +345,11 @@
 
     function changeTvChannel(channelIndex) {
       activeChannel = channelIndex;
-      activeVideo = 0; // Reinicia a fila do canal escolhido
+      activeVideo = 0;
       
       tvPlayerEngine.loadVideoById(tvChannelsDatabase[activeChannel].items[activeVideo]);
       resetPlayButtonState();
 
-      // Atualização visual do estado dos botões da grade
       const targetButtons = document.querySelectorAll('.channel-selector');
       targetButtons.forEach((btn, idx) => {
         if (idx === channelIndex) {
@@ -364,3 +383,4 @@
   </script>
 </body>
 </html>
+
