@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OIO TV Player</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Navbar Superior -->
+        <header class="navbar">
+            <div class="logo">
+                <i class="fa-solid fa-play" style="color: #E50914;"></i> OIO TV
+            </div>
+            <div class="nav-actions">
+                <button id="btn-search" aria-label="Pesquisar"><i class="fa-solid fa-search"></i></button>
+                <button id="btn-profile" aria-label="Perfil"><i class="fa-solid fa-user-circle"></i></button>
+            </div>
+        </header>
+
+        <!-- Banner Principal (Hero) -->
+        <section id="hero" class="hero">
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <span class="badge">OIO Originals • Destaque</span>
+                <h1 id="hero-title">Cyber Odyssey 2026</h1>
+                <p id="hero-desc">Sua plataforma modular de streaming com interface glassmorphism de alta performance e zero crash.</p>
+                <div class="hero-buttons">
+                    <button class="btn-primary" id="hero-play"><i class="fa-solid fa-play"></i> Assistir</button>
+                    <button class="btn-secondary" id="hero-info"><i class="fa-solid fa-info-circle"></i> Detalhes</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Carrosséis de Conteúdo -->
+        <main class="content-rows" id="content-container">
+            <!-- Inserido dinamicamente via script.js -->
+        </main>
+
+        <!-- Modal Player de Vídeo -->
+        <div id="player-modal" class="modal hidden">
+            <div class="modal-content">
+                <button id="modal-close" aria-label="Fechar"><i class="fa-solid fa-times"></i></button>
+                <div class="player-wrapper" id="player-container"></div>
+                <div class="modal-info">
+                    <h2 id="modal-title">Título</h2>
+                    <p id="modal-desc">Descrição do vídeo selecionado.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu de Navegação Inferior (Mobile First) -->
+        <nav class="bottom-nav">
+            <a href="#" class="nav-item active" data-tab="home"><i class="fa-solid fa-house"><span>Home</span></i></a>
+            <a href="#" class="nav-item" data-tab="filmes"><i class="fa-solid fa-film"><span>Filmes</span></i></a>
+            <a href="#" class="nav-item" data-tab="series"><i class="fa-solid fa-tv"><span>Séries</span></i></a>
+            <a href="#" class="nav-item" data-tab="infantil"><i class="fa-solid fa-child"><span>Desenhos</span></i></a>
+            <a href="#" class="nav-item" data-tab="minha-lista"><i class="fa-solid fa-heart"><span>Lista</span></i></a>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
