@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>OIO TV - Single File Netflix + Edge Functions</title>
+<style>
+/* ==================== RESET E TEMA NETFLIX ESCURO ==================== */
+:root{
+  --bg:#141414; --bg2:#181818; --card:#232323; --bd:#333;
+  --red:#E50914; --text:#fff; --muted:#808080; --muted2:#aaa;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  background:var(--bg); color:var(--text); min-height:100vh;
+}
+
+/* ==================== TOPO FIXO ==================== */
+header{
+  position:fixed; top:0; left:0; right:0; z-index:100;
+  height:68px; display:flex; align-items:center; justify-content:space-between;
+  padding:0 16px; gap:12px;
+  background:linear-gradient(to bottom, rgba(0,0,0,0.9) 10%, rgba(20,20,20,0.7) 60%, transparent);
+  backdrop-filter:blur(8px); border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.logo{color:var(--red); font-weight:900; font-size:26px; letter-spacing:0.02em; flex-shrink:0}
+.search-area{display:flex; align-items:center; gap:8px; flex:1; max-width:520px}
+.search-area input{
+  flex:1; background:#000; border:1px solid #444; color:#fff;
+  padding:10px 12px; border-radius:4px; font-size:14px; outline:none;
+}
+.search-area input:focus{border-color:#fff}
+.btn{
+  background:#fff; color:#000; border:none; padding:10px 14px; border-radius:4px;
+  font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px;
+  transition:0.2s;
+}
+.btn:hover{opacity:0.8}
+.btn.red{background:var(--red); color:#fff}
+.btn.dark{background:rgba(109,109,110,0.7); color:#fff; border:1px solid #444}
+
+/* ==================== FAIXA DE CATEGORIAS ==================== */
+.categories{
+  margin-top:68px; /* abaixo do header fixo */
+  display:flex; gap:8px; overflow-x:auto; padding:12px 16px;
+  border-bottom:1px solid #222; position:sticky; top:68px; z-index:50;
+  background:rgba(20,20,20,0.95); backdrop-filter:blur(10px);
+}
+.categories::-webkit-scrollbar{display:none}
+.cat{
+  white-space:nowrap; padding:8px 14px; border-radius:20px;
+  background:#2a2a2a; border:1px solid #333; color:#ccc;
+  font-size:13px; font-weight:600; cursor:pointer; transition:0.2s;
+}
+.cat.active, .cat:hover{background:#fff; color:#000; border-color:#fff}
+
+/* ==================== ÁREA PRINCIPAL ==================== */
+main{max-width:1400px; margin:0 auto; padding:18px 0 90px}
+.section{padding:0 0 0 16px; margin:18px 0}
+.section h2{font-size:18px; margin-bottom:10px; display:flex; align-items:center; gap:8px}
+.grid{display:flex; gap:10px; overflow-x:auto; padding:6px 0 14px; scrollbar-width:none}
+.grid::-webkit-scrollbar{display:none}
+
+/* ==================== CARD DE VÍDEO ==================== */
+.card{
+  flex-shrink:0; width:190px; background:var(--card); border-radius:6px;
+  overflow:hidden; border:1px solid #2a2a2a; cursor:pointer;
+  transition:transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.card:hover{
+  transform:scale(1.06); border-color:#555; box-shadow:0 8px 24px rgba(0,0,0,0.6); z-index:2;
+}
+.thumb{
+  width:100%; aspect-ratio:16/9; background:linear-gradient(180deg,#2a2a2a,#141414);
+  display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;
+  color:#fff; font-size:11px; text-align:center;
+}
+.thumb img{width:100%; height:100%; object-fit:cover; display:block}
+.badge{
+  position:absolute; top:6px; left:6px; background:var(--red); color:#fff;
+  font-size:9px; font-weight:800; padding:2px 6px; border-radius:2px;
+}
+.badge.origin{background:rgba(0,0,0,0.7); top:auto; bottom:6px; left:6px; font-weight:600}
+.badge.duration{background:rgba(0,0,0,0.8); top:auto; bottom:6px; right:6px; left:auto}
+.info{padding:8px}
+.title{font-size:13px; font-weight:700; line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:32px}
+.meta{font-size:11px; color:var(--muted2); margin-top:4px; line-height:1.3}
+.watch{
+  margin-top:8px; width:100%; padding:8px; border-radius:4px; border:none;
+  background:#fff; color:#000; font-weight:800; font-size:12px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:6px; transition:0.2s;
+}
+.watch:hover{background:var(--red); color:#fff}
+
+/* ==================== PLAYER FULLSCREEN ==================== */
+#playerOverlay{
+  position:fixed; inset:0; z-index:999; background:#000; display:none; flex-direction:column;
+}
+#playerOverlay.show{display:flex}
+#playerHeader{
+  height:56px; display:flex; align-items:center; justify-content:space-between;
+  padding:0 16px; background:#000; border-bottom:1px solid #222;
+}
+#playerContainer{flex:1; display:flex; align-items:center; justify-content:center; background:#000; position:relative}
+#playerContainer iframe, #playerContainer video{width:100%; height:100%; border:none; background:#000}
+#playerInfo{padding:12px 16px; background:#111; border-top:1px solid #222}
+
+/* ==================== LOG E STATUS ==================== */
+#status{padding:8px 16px; font-size:11px; color:var(--muted2); font-family:monospace}
+#status span.ok{color:#22c55e} #status span.err{color:#ef4444}
+
+/* ==================== RESPONSIVO ==================== */
+@media(max-width:700px){
+  .card{width:150px}
+  .search-area{max-width:none}
+  header{flex-wrap:wrap; height:auto; padding:10px 12px; gap:8px}
+  .categories{top:86px; margin-top:86px}
+  main{padding-top:6px}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== TOPO FIXO ==================== -->
+<header>
+  <div class="logo">OIO TV</div>
+  <div class="search-area">
+    <input id="searchInput" type="text" placeholder="Buscar filmes, séries, educação..." />
+    <button class="btn" id="btnBuscar">🔍 Buscar</button>
+    <button class="btn dark" id="btnAtualizar">↻ Atualizar</button>
+  </div>
+</header>
+
+<!-- ==================== CATEGORIAS HORIZONTAL ==================== -->
+<div class="categories" id="categories">
+  <!-- Geradas via JS para fácil edição -->
+</div>
+
+<!-- ==================== STATUS / LOG ==================== -->
+<div id="status">Pronto • Single file • Netflix inspirado • Consome Edge Functions reais • Zero Crash</div>
+
+<!-- ==================== ÁREA PRINCIPAL ==================== -->
+<main>
+  <div class="section">
+    <h2 id="sectionTitle">🔥 Em alta</h2>
+    <div class="grid" id="grid"></div>
+  </div>
+</main>
+
+<!-- ==================== PLAYER FULLSCREEN ==================== -->
+<div id="playerOverlay">
+  <div id="playerHeader">
+    <div style="font-weight:800">▶️ OIO TV Player</div>
+    <button class="btn dark" onclick="fecharPlayer()">✕ Fechar</button>
+  </div>
+  <div id="playerContainer">
+    <!-- iframe ou video injetado aqui via JS -->
+    <div id="playerPlaceholder" style="color:#666">Selecione um vídeo para assistir</div>
+  </div>
+  <div id="playerInfo">
+    <div id="playerTitle" style="font-weight:800"></div>
+    <div id="playerMeta" style="font-size:12px; color:#aaa; margin-top:4px"></div>
+  </div>
+</div>
+
+<script>
+// ==================== CONFIGURAÇÃO SUPABASE - FÁCIL DE EDITAR ====================
+const SB_URL = "https://uqdwtzlkqaosnweyoyit.supabase.co";
+const SB_ANON = "sb_publishable_uafBQD1aj3w8eq4me0sNQWzk8TwhA";
+const EF_BASE = `${SB_URL}/functions/v1/`;
+const DEFAULT_TIMEOUT = 15000;
+
+// ==================== MAPA DE CATEGORIAS PARA EDGE FUNCTIONS ====================
+// Edite aqui para mudar qual Edge cada categoria usa
+const CATEGORIAS = [
+  { id: 'em_alta', label: 'Em alta', edge: 'tmdb', params: { tipo: 'trending', idioma: 'pt-BR' }, cache: 3600 },
+  { id: 'filmes', label: 'Filmes', edge: 'tmdb', params: { tipo: 'popular', idioma: 'pt-BR' }, cache: 3600 },
+  { id: 'series', label: 'Séries', edge: 'youtube', params: { q: 'series trailer', maxResults: 12 }, cache: 600 },
+  { id: 'educacao', label: 'Educação', edge: 'archive', params: { q: 'education', rows: 12 }, cache: 3600 },
+  { id: 'infantil', label: 'Infantil', edge: 'youtube', params: { q: 'desenho infantil', maxResults: 12 }, cache: 600 },
+  { id: 'musica', label: 'Música', edge: 'youtube', params: { q: 'music clipe', maxResults: 12 }, cache: 600 },
+  { id: 'esportes', label: 'Esportes', edge: 'twitch', params: { acao: 'streams', first: 12 }, cache: 120 },
+  { id: 'noticias', label: 'Notícias', edge: 'gnews', params: { q: 'notícias', lang: 'pt', max: 12 }, cache: 1800 },
+  { id: 'documentarios', label: 'Documentários', edge: 'nasa', params: { endpoint: 'apod' }, cache: 43200 },
+  // Extras que você tem no Vault:
+  { id: 'facebook', label: 'Facebook', edge: 'facebook', params: { acao: 'list', limit: 12 }, cache: 600 },
+  { id: 'vimeo', label: 'Vimeo', edge: 'vimeo', params: { acao: 'list', limit: 12 }, cache: 600 },
+  { id: 'pexels', label: 'Pexels', edge: 'pexels', params: { query: 'nature', per_page: 12 }, cache: 1800 },
+];
+
+// ==================== CACHE SIMPLES (localStorage) ====================
+function cacheGet(key){
+  try{
+    const raw = localStorage.getItem(key);
+    if(!raw) return null;
+    const entry = JSON.parse(raw);
+    if(Date.now() > entry.expiresAt){ localStorage.removeItem(key); return null; }
+    return entry.data;
+  }catch{ return null; }
+}
+function cacheSet(key, data, ttl){
+  try{
+    const entry = { data, expiresAt: Date.now() + ttl*1000 };
+    localStorage.setItem(key, JSON.stringify(entry));
+  }catch{}
+}
+function cacheKey(nome, body){ return `ef_${nome}_${JSON.stringify(body)}`; }
+
+// ==================== HELPER PRINCIPAL callEF() - ZERO CRASH ====================
+// Sempre retorna {ok, data, error} sem lançar exceção - tela nunca quebra
+async function callEF(nome, body={}, options={}){
+  const { cache=0, timeout=DEFAULT_TIMEOUT, authToken } = options;
+  // 1. Tenta cache
+  if(cache>0){
+    const hit = cacheGet(cacheKey(nome, body));
+    if(hit!==null) return { ok:true, data:hit, error:null };
+  }
+  // 2. Chamada com timeout usando AbortController
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), timeout);
+  try{
+    const response = await fetch(`${EF_BASE}${nome}`,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization": `Bearer ${authToken ?? SB_ANON}`
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+
+    // 3. Suporte a binário (ElevenLabs retorna audio/mpeg)
+    const contentType = response.headers.get("content-type") || "";
+    if(contentType.includes("audio") || contentType.includes("octet-stream")){
+      const blob = await response.blob();
+      const data = { _blob: blob, _url: URL.createObjectURL(blob) };
+      return { ok:true, data, error:null };
+    }
+
+    // 4. Resposta JSON
+    const json = await response.json().catch(()=>({}));
+    if(!response.ok){
+      const msg = json?.error || json?.message || `HTTP ${response.status}`;
+      return { ok:false, data:null, error:msg };
+    }
+
+    // 5. Grava cache se pediu
+    if(cache>0){ cacheSet(cacheKey(nome, body), json, cache); }
+
+    return { ok:true, data:json, error:null };
+  }catch(err){
+    clearTimeout(timer);
+    const isTimeout = err.name === "AbortError";
+    const message = isTimeout ? `Timeout: ${nome} não respondeu em ${timeout}ms` : (err.message || "Erro desconhecido");
+    return { ok:false, data:null, error:message };
+  }
+}
+
+// ==================== ATALHOS EF - IGUAL AO SEU DOCUMENTO ====================
+const EF = {
+  tmdb: (tipo="trending")=> callEF("tmdb", { tipo, idioma:"pt-BR" }, { cache:3600 }),
+  youtube: (q, max=12)=> callEF("youtube", { q, maxResults:max }, { cache:600 }),
+  twitch: (first=12)=> callEF("twitch", { acao:"streams", first }, { cache:120 }),
+  gnews: (q, lang="pt", max=12)=> callEF("gnews", { q, lang, max }, { cache:1800 }),
+  nasa: ()=> callEF("nasa", { endpoint:"apod" }, { cache:43200 }),
+  archive: (q)=> callEF("archive", { q, rows:12 }, { cache:3600 }),
+  pexels: (query, per_page=12)=> callEF("pexels", { query, per_page }, { cache:1800 }),
+  facebook: (acao="list", params={})=> callEF("facebook", { acao, ...params }, { cache:600 }),
+  vimeo: (acao="list", params={})=> callEF("vimeo", { acao, ...params }, { cache:600 }),
+  // genéricos
+  generic: (edge, params, cache=600)=> callEF(edge, params, { cache })
+};
+
+// ==================== ESTADO GLOBAL SIMPLES ====================
+let categoriaAtual = CATEGORIAS[0];
+let videosCache = [];
+
+// ==================== RENDER CATEGORIAS ====================
+function renderCategorias(){
+  const container = document.getElementById('categories');
+  container.innerHTML = '';
+  CATEGORIAS.forEach(cat=>{
+    const btn = document.createElement('button');
+    btn.className = 'cat' + (cat.id===categoriaAtual.id ? ' active' : '');
+    btn.textContent = cat.label;
+    btn.onclick = ()=>{ selecionarCategoria(cat.id); };
+    container.appendChild(btn);
+  });
+}
+
+// ==================== SELECIONAR CATEGORIA -> CHAMA EDGE FUNCTION ====================
+async function selecionarCategoria(catId){
+  const cat = CATEGORIAS.find(c=>c.id===catId);
+  if(!cat) return;
+  categoriaAtual = cat;
+  document.getElementById('sectionTitle').textContent = '🔥 ' + cat.label;
+  document.querySelectorAll('.cat').forEach((el,i)=>{
+    el.classList.toggle('active', CATEGORIAS[i].id===catId);
+  });
+  // Busca na Edge
+  await buscarVideosCategoria(cat);
+}
+
+// ==================== BUSCAR VÍDEOS DA CATEGORIA ====================
+async function buscarVideosCategoria(cat){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '<div style="padding:20px;color:#aaa">Carregando '+cat.label+' via Edge '+cat.edge+'...</div>';
+  setStatus(`Buscando ${cat.label} via ${cat.edge}...`);
+
+  const result = await callEF(cat.edge, cat.params, { cache: cat.cache });
+
+  if(!result.ok){
+    setStatus(`<span class="err">❌ ${cat.edge} fallback: ${result.error}</span> - Mostrando demo (Zero Crash)`, true);
+    // Fallback demo para não deixar tela em branco
+    const fallback = gerarFallback(cat);
+    renderCards(fallback, cat);
+    return;
+  }
+
+  setStatus(`<span class="ok">✅ ${cat.edge} OK - ${contarItens(result.data)} itens reais - cache ${cat.cache}s</span>`, true);
+
+  // Normaliza lista (cada Edge retorna formato diferente)
+  const lista = normalizarLista(result.data);
+  videosCache = lista;
+  renderCards(lista, cat);
+}
+
+// ==================== NORMALIZA RESPOSTA (CADA EDGE RETORNA DIFERENTE) ====================
+function normalizarLista(data){
+  if(!data) return [];
+  if(Array.isArray(data)) return data;
+  if(data.results) return data.results; // tmdb
+  if(data.items) return data.items; // youtube
+  if(data.data && Array.isArray(data.data)) return data.data; // twitch
+  if(data.data && data.data.data) return data.data.data; // twitch aninhado
+  if(data.photos) return data.photos; // pexels
+  if(data.response && data.response.docs) return data.response.docs; // archive
+  if(data.docs) return data.docs;
+  if(data.articles) return data.articles; // gnews
+  return [data]; // objeto único (nasa apod)
+}
+
+function contarItens(data){
+  return normalizarLista(data).length;
+}
+
+// ==================== FALLBACK DEMO (ZERO CRASH) ====================
+function gerarFallback(cat){
+  return Array.from({length:8}, (_,i)=>({
+    id: `fallback-${cat.id}-${i}`,
+    title: `OIO ${cat.label} Demo ${i+1} - Fallback`,
+    channel: 'OIO TV Originals',
+    origin: cat.edge + ' fallback',
+    thumbnail: '',
+    duration: '02:30',
+    url: '',
+  }));
+}
+
+// ==================== RENDER CARDS ====================
+function renderCards(lista, cat){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  if(!lista || lista.length===0){
+    grid.innerHTML = '<div style="padding:20px;color:#777">Nenhum vídeo retornado por esta Edge ainda. Verifique Vault secrets ou crie conteúdo.</div>';
+    return;
+  }
+
+  lista.slice(0,24).forEach(item=>{
+    // Tenta extrair campos comuns de diferentes Edges
+    const title = item.title || item.name || item.id || 'Vídeo OIO';
+    const thumb = item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` :
+                  item.thumbnail || item.thumbnail_url || item.image || item.src?.medium || item.url || item.enclosure || '';
+    const channel = item.channel || item.channelTitle || item.user?.name || item.creator || item.username || 'Canal OIO';
+    const origin = cat.edge + ' • ' + cat.label;
+    const duration = item.duration || item.runtime || item.length || (item.duration_text || '');
+    const videoUrl = item.video_url || item.url || item.link || item._url || '';
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="thumb">
+        ${thumb ? `<img src="${thumb}" loading="lazy" onerror="this.style.display='none'">` : `<span>${String(title).slice(0,18)}</span>`}
+        <span class="badge">${cat.label.toUpperCase()}</span>
+        <span class="badge origin">${cat.edge}</span>
+        ${duration ? `<span class="badge duration">${String(duration).slice(0,8)}</span>` : ''}
+      </div>
+      <div class="info">
+        <div class="title">${String(title).slice(0,60)}</div>
+        <div class="meta">📺 ${String(channel).slice(0,26)}<br>🔗 ${origin} ${duration? '• ⏱️ '+String(duration).slice(0,8) : ''}</div>
+        <button class="watch" onclick='abrirPlayer(${JSON.stringify({title, channel, origin, thumb, videoUrl, duration}).replace(/'/g,"&#39;")})'>▶️ Assistir</button>
+      </div>
+    `;
+    // Clique no card inteiro também abre player
+    card.addEventListener('click', (e)=>{
+      if(e.target.closest('.watch')) return; // já tratado
+      abrirPlayer({title, channel, origin, thumb, videoUrl, duration});
+    });
+    grid.appendChild(card);
+  });
+}
+
+// ==================== BUSCA POR TEXTO ====================
+async function buscarPorTexto(q){
+  if(!q || q.trim().length<2){ setStatus('Digite ao menos 2 letras para buscar'); return; }
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '<div style="padding:20px;color:#aaa">Buscando "'+q+'" em youtube, archive, tmdb...</div>';
+  document.getElementById('sectionTitle').textContent = '🔍 Resultados para: ' + q;
+  setStatus(`Buscando "${q}" em 3 Edges...`);
+
+  // Busca em 3 Edges ao mesmo tempo
+  const [yt, arch, tmdb] = await Promise.all([
+    EF.youtube(q, 8),
+    callEF('archive', { q, rows:8 }, { cache:600 }),
+    EF.tmdb('popular')
+  ]);
+
+  let combinados = [];
+  if(yt.ok) combinados = combinados.concat(normalizarLista(yt.data));
+  if(arch.ok) combinados = combinados.concat(normalizarLista(arch.data));
+  if(tmdb.ok) combinados = combinados.concat(normalizarLista(tmdb.data));
+
+  if(combinados.length===0){
+    setStatus(`<span class="err">Nenhum resultado para "${q}" - fallback</span>`, true);
+    renderCards(gerarFallback({id:'busca', label:'Busca', edge:'youtube'}), {label:'Busca', edge:'youtube'});
+  }else{
+    setStatus(`<span class="ok">✅ ${combinados.length} resultados para "${q}"</span>`, true);
+    renderCards(combinados, {label:'Busca: '+q, edge:'youtube+archive+tmdb'});
+  }
+}
+
+// ==================== PLAYER FULLSCREEN (iframe / video) ====================
+function abrirPlayer({title, channel, origin, thumb, videoUrl, duration}){
+  const overlay = document.getElementById('playerOverlay');
+  const container = document.getElementById('playerContainer');
+  const placeholder = document.getElementById('playerPlaceholder');
+
+  document.getElementById('playerTitle').textContent = title;
+  document.getElementById('playerMeta').textContent = `${channel} • ${origin} ${duration? '• '+duration : ''}`;
+
+  // Limpa player anterior
+  container.querySelectorAll('iframe, video').forEach(el=>el.remove());
+  placeholder.style.display='none';
+
+  // Decide tipo de player
+  if(videoUrl){
+    if(videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.includes('youtube')){
+      // YouTube embed via iframe
+      const videoId = extrairYouTubeId(videoUrl) || videoUrl;
+      const iframe = document.createElement('iframe');
+      iframe.src = videoId.length===11 ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : videoUrl;
+      iframe.allow = "autoplay; fullscreen";
+      iframe.allowFullscreen = true;
+      container.appendChild(iframe);
+    }else if(videoUrl.endsWith('.mp4') || videoUrl.endsWith('.m3u8') || videoUrl.includes('.mp4')){
+      const video = document.createElement('video');
+      video.src = videoUrl;
+      video.controls = true;
+      video.autoplay = true;
+      container.appendChild(video);
+    }else{
+      // URL genérica em iframe
+      const iframe = document.createElement('iframe');
+      iframe.src = videoUrl;
+      iframe.allowFullscreen = true;
+      container.appendChild(iframe);
+    }
+  }else{
+    // Sem URL real - mostra thumbnail grande + mensagem (fallback Zero Crash)
+    const div = document.createElement('div');
+    div.style.cssText = 'width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#aaa;padding:20px;text-align:center';
+    div.innerHTML = `<div style="width:100%;max-width:500px;aspect-ratio:16/9;background:#222;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">${thumb?`<img src="${thumb}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`:'Sem vídeo - Fallback'}</div><div style="font-size:14px">Vídeo demo - Edge retornou sem URL reproduzível<br><span style="font-size:11px;color:#666">Configure sua Edge para retornar {url, video_url} com link mp4, youtube ou iframe</span></div>`;
+    container.appendChild(div);
+  }
+
+  overlay.classList.add('show');
+}
+
+function fecharPlayer(){
+  const overlay = document.getElementById('playerOverlay');
+  const container = document.getElementById('playerContainer');
+  container.querySelectorAll('iframe, video').forEach(el=>{
+    el.pause && el.pause();
+    el.remove();
+  });
+  document.getElementById('playerPlaceholder').style.display='block';
+  overlay.classList.remove('show');
+}
+
+function extrairYouTubeId(url){
+  const m = url.match(/(?:youtube\.com\/.*v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+// ==================== STATUS ====================
+function setStatus(html, isHtml=false){
+  const el = document.getElementById('status');
+  if(isHtml) el.innerHTML = html;
+  else el.textContent = html;
+}
+
+// ==================== EVENTOS TOPO ====================
+document.getElementById('btnBuscar').onclick = ()=>{
+  const q = document.getElementById('searchInput').value.trim();
+  buscarPorTexto(q);
+};
+document.getElementById('searchInput').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter'){
+    const q = e.target.value.trim();
+    buscarPorTexto(q);
+  }
+});
+document.getElementById('btnAtualizar').onclick = ()=>{
+  localStorage.clear();
+  setStatus('Cache limpo - recarregando categoria...');
+  buscarVideosCategoria(categoriaAtual);
+};
+
+// ==================== INICIALIZAÇÃO ====================
+(function init(){
+  renderCategorias();
+  // Carrega primeira categoria automaticamente
+  buscarVideosCategoria(categoriaAtual);
+  console.log('OIO TV Single File Netflix Style - Pronto');
+})();
+</script>
+</body>
+</html>
