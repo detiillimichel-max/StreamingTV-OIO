@@ -1,4 +1,10 @@
-// OIO TV Player - Lógica Principal Integrada
+// OIO TV Player - Lógica Principal Integrada com Edge Functions
+const CONFIG = {
+    TMDB_URL: "https://uqdwtzlkqaosnweyoyit.supabase.co/functions/v1/tmdb",
+    YOUTUBE_URL: "https://uqdwtzlkqaosnweyoyit.supabase.co/functions/v1/youtube",
+    SUPABASE_KEY: "sb_publishable_uafBQD1aJ3w8_eq4meOsNQ_wzk8TwhA"
+};
+
 const APP_DATA = {
     hero: {
         title: "Cyber Odyssey 2026",
@@ -25,24 +31,65 @@ document.addEventListener("DOMContentLoaded", () => {
     initApp();
 });
 
-function initApp() {
+async function initApp() {
     const container = document.getElementById("content-container");
     if (!container) return;
-    container.innerHTML = "";
 
-    renderHero(APP_DATA.hero);
-    renderRow(container, "Filmes em Alta", APP_DATA.filmes);
-    renderRow(container, "Séries & Documentários", APP_DATA.series);
-    renderRow(container, "Desenhos & Animações", APP_DATA.infantil);
+    let currentData = { ...APP_DATA };
+
+    try {
+        const responseTmdb = await fetch(CONFIG.TMDB_URL, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${CONFIG.SUPABASE_KEY}`,
+                "Content-Type": "application/json"
+            }
+        });
+
+        if (responseTmdb.ok) {
+            const tmdbData = await responseTmdb.json();
+            if (tmdbData) {
+                if (tmdbData.hero) currentData.hero = tmdbData.hero;
+                if (tmdbData.filmes) currentData.filmes = tmdbData.filmes;
+                if (tmdbData.series) currentData.series = tmdbData.series;
+            }
+        }
+
+        const responseYt = await fetch(CONFIG.YOUTUBE_URL, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${CONFIG.SUPABASE_KEY}`,
+                "Content-Type": "application/json"
+            }
+        });
+
+        if (responseYt.ok) {
+            const ytData = await responseYt.json();
+            if (ytData && ytData.videos) {
+                currentData.infantil = ytData.videos;
+            }
+        }
+    } catch (error) {
+        console.warn("Modo de proteção ativo. Executando com dados locais.", error);
+    }
+
+    container.innerHTML = "";
+    renderHero(currentData.hero);
+    renderRow(container, "Filmes em Alta", currentData.filmes);
+    renderRow(container, "Séries & Documentários", currentData.series);
+    renderRow(container, "Desenhos & Animações", currentData.infantil);
 
     setupModal();
     setupNavigation();
 }
 
 function renderHero(hero) {
-    document.getElementById("hero-title").innerText = hero.title;
-    document.getElementById("hero-desc").innerText = hero.desc;
-    document.getElementById("hero").style.backgroundImage = `url('${hero.poster}')`;
+    if (!hero) return;
+    document.getElementById("hero-title").innerText = hero.title || "OIO TV";
+    document.getElementById("hero-desc").innerText = hero.desc || "";
+    if (hero.poster) {
+        document.getElementById("hero").style.backgroundImage = `url('${hero.poster}')`;
+    }
     
     document.getElementById("hero-play").onclick = () => {
         openPlayer(hero.title, hero.desc, hero.url);
@@ -50,15 +97,16 @@ function renderHero(hero) {
 }
 
 function renderRow(parent, title, items) {
+    if (!items || items.length === 0) return;
     const row = document.createElement("div");
     row.className = "row";
     
     const cards = items.map(item => `
-        <div class="card" data-title="${item.title}" data-subtitle="${item.subtitle}" data-url="${item.url}">
-            <img class="card-img" src="${item.poster}" alt="${item.title}" loading="lazy">
+        <div class="card" data-title="${item.title || ''}" data-subtitle="${item.subtitle || ''}" data-url="${item.url || ''}">
+            <img class="card-img" src="${item.poster || ''}" alt="${item.title || ''}" loading="lazy">
             <div class="card-body">
-                <div class="card-title">${item.title}</div>
-                <div class="card-subtitle">${item.subtitle}</div>
+                <div class="card-title">${item.title || ''}</div>
+                <div class="card-subtitle">${item.subtitle || ''}</div>
             </div>
         </div>
     `).join("");
@@ -87,7 +135,9 @@ function openPlayer(title, desc, url) {
     document.getElementById("modal-title").innerText = title;
     document.getElementById("modal-desc").innerText = desc;
 
-    if (url.includes("youtube.com/embed") || url.includes("youtu.be")) {
+    if (!url) {
+        container.innerHTML = `<div style="color:white; padding:20px; text-align:center;">Mídia indisponível</div>`;
+    } else if (url.includes("youtube.com/embed") || url.includes("youtu.be")) {
         container.innerHTML = `<iframe src="${url}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
     } else {
         container.innerHTML = `<video src="${url}" controls autoplay playsinline></video>`;
@@ -121,4 +171,3 @@ function setupNavigation() {
         };
     });
 }
-
